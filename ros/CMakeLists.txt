@@ -40,43 +40,19 @@ else()
   FetchContent_MakeAvailable(ext_kiss_icp_core)
 endif()
 
-if("$ENV{ROS_VERSION}" STREQUAL "1")
-  message(STATUS "KISS-ICP-ROS1 wrapper will be compiled")
-  find_package(
-    catkin REQUIRED
-    COMPONENTS geometry_msgs
-               nav_msgs
-               sensor_msgs
-               roscpp
-               rosbag
-               std_msgs
-               tf2
-               tf2_ros)
-  catkin_package()
+message(STATUS "KISS-ICP-ROS2 wrapper will be compiled")
 
-  # ROS1 node
-  add_executable(odometry_node ros1/OdometryServer.cpp)
-  target_include_directories(odometry_node PUBLIC include ${catkin_INCLUDE_DIRS})
-  target_link_libraries(odometry_node kiss_icp::pipeline ${catkin_LIBRARIES})
-  install(TARGETS odometry_node RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-elseif("$ENV{ROS_VERSION}" STREQUAL "2")
-  message(STATUS "KISS-ICP-ROS2 wrapper will be compiled")
+find_package(ament_cmake REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
-  find_package(ament_cmake REQUIRED)
-  find_package(nav_msgs REQUIRED)
-  find_package(rclcpp REQUIRED)
-  find_package(sensor_msgs REQUIRED)
-  find_package(tf2_ros REQUIRED)
-
-  # ROS2 node
-  add_executable(odometry_node ros2/OdometryServer.cpp)
-  target_include_directories(odometry_node PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-  target_link_libraries(odometry_node kiss_icp::pipeline)
-  install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
-  install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME}/)
-  ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros)
-  ament_package()
-else()
-  message(FATAL_ERROR "catkin or colcon not found KISS-ICP-ROS disabled")
-endif()
+# ROS2 node
+add_executable(odometry_node ros2/OdometryServer.cpp)
+target_include_directories(odometry_node PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(odometry_node kiss_icp::pipeline)
+install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME}/)
+ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros)
+ament_package()
