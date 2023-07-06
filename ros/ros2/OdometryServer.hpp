@@ -31,6 +31,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/transform_broadcaster.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace kiss_icp_ros {
 
@@ -71,6 +72,11 @@ private:
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
     std::string child_frame_{"base_link"};
+
+    // variables for odom velocity calculation
+    tf2::Transform odom_transform_;     // pose of base frame in odom frame;
+    tf2::Transform prev_odom_transform_;     // previous pose of base frame in odom frame;
+    rclcpp::Time prev_stamp_time_;
 };
 
 }  // namespace kiss_icp_ros

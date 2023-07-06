@@ -41,6 +41,7 @@
 #include "std_msgs/msg/string.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
 #include "tf2_ros/transform_broadcaster.h"
+#include "tf2/utils.h"
 
 namespace kiss_icp_ros {
 
@@ -83,6 +84,10 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
     // Intialize trajectory publisher
     path_msg_.header.frame_id = odom_frame_;
     traj_publisher_ = create_publisher<nav_msgs::msg::Path>("trajectory", qos);
+
+    // Initialize transforms for odom calculation
+    odom_transform_.setIdentity();
+    prev_odom_transform_.setIdentity();
 
     // Broadcast a static transformation that links with identity the specified base link to the
     // pointcloud_frame, basically to always be able to visualize the frame in rviz
@@ -153,6 +158,31 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
     odom_msg.pose.pose.position.x = t_current.x();
     odom_msg.pose.pose.position.y = t_current.y();
     odom_msg.pose.pose.position.z = t_current.z();
+
+    // Get pose difference in base frame and calculate velocities
+    odom_transform_.setOrigin(tf2::Vector3(t_current.x(), t_current.y(), t_current.z()));
+    odom_transform_.setRotation(tf2::Quaternion(q_current.x(), q_current.y(), q_current.z(), q_current.w()));
+    auto pose_difference = prev_odom_transform_.inverse() * odom_transform_;
+
+    bool is_previous_data_available = prev_stamp_time_.nanoseconds() != 0;
+
+    if (is_previous_data_available) {
+        double dt = (rclcpp::Time(msg.header.stamp) - prev_stamp_time_).nanoseconds() / 1e+9;
+        if (dt >= 0.0) {
+            odom_msg.twist.twist.linear.x = pose_difference.getOrigin().getX() / dt;
+            odom_msg.twist.twist.linear.y = pose_difference.getOrigin().getY() / dt;
+            odom_msg.twist.twist.angular.z = tf2::getYaw(pose_difference.getRotation()) / dt;
+        }
+        else {
+            RCLCPP_ERROR(get_logger(), "Unable to calculate odom velocities."
+                         "Time between messages is <= zero. Potential jump back in time?");
+            // ToDo: decide what to do in this case
+        }
+    }
+
+    prev_odom_transform_ = odom_transform_;
+    prev_stamp_time_ = rclcpp::Time(msg.header.stamp);
+
     odom_publisher_->publish(odom_msg);
 
     // publish trajectory msg
