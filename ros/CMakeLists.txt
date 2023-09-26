@@ -47,6 +47,7 @@ find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 # ROS2 node
 add_executable(odometry_node ros2/OdometryServer.cpp)
@@ -54,5 +55,5 @@ target_include_directories(odometry_node PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/inc
 target_link_libraries(odometry_node kiss_icp::pipeline)
 install(TARGETS odometry_node RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME}/)
-ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros)
+ament_target_dependencies(odometry_node rclcpp nav_msgs sensor_msgs tf2_ros tf2_geometry_msgs)
 ament_package()
