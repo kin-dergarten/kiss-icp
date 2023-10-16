@@ -64,6 +64,7 @@ private:
     /// Path publisher
     nav_msgs::msg::Path path_msg_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr traj_publisher_;
+    bool publish_trajectory_ = false;
 
     /// KISS-ICP
     kiss_icp::pipeline::KissICP odometry_;

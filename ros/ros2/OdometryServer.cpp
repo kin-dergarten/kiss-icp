@@ -57,6 +57,7 @@ OdometryServer::OdometryServer() : rclcpp::Node("odometry_node") {
     config_.max_points_per_voxel = declare_parameter<int>("max_points_per_voxel", config_.max_points_per_voxel);
     config_.initial_threshold = declare_parameter<double>("initial_threshold", config_.initial_threshold);
     config_.min_motion_th = declare_parameter<double>("min_motion_th", config_.min_motion_th);
+    publish_trajectory_ = declare_parameter<bool>("publish_trajectory", false);
     if (config_.max_range < config_.min_range) {
         RCLCPP_WARN(get_logger(), "[WARNING] max_range is smaller than min_range, settng min_range to 0.0");
         config_.min_range = 0.0;
@@ -186,11 +187,14 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::SharedPt
     odom_publisher_->publish(odom_msg);
 
     // publish trajectory msg
-    geometry_msgs::msg::PoseStamped pose_msg;
-    pose_msg.pose = odom_msg.pose.pose;
-    pose_msg.header = odom_msg.header;
-    path_msg_.poses.push_back(pose_msg);
-    traj_publisher_->publish(path_msg_);
+    // path message grows without bound! enable only for debug purposes
+    if (publish_trajectory_) {
+        geometry_msgs::msg::PoseStamped pose_msg;
+        pose_msg.pose = odom_msg.pose.pose;
+        pose_msg.header = odom_msg.header;
+        path_msg_.poses.push_back(pose_msg);
+        traj_publisher_->publish(path_msg_);
+    }
 
     // Publish KISS-ICP internal data, just for debugging
     std_msgs::msg::Header frame_header = msg.header;
